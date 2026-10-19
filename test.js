@@ -167,3 +167,18 @@ test("a cwd that is not usable gives nulls, not an exception", async () => {
   assert.equal((await gitInfo(123)).isRepo, false);
   assert.equal((await gitInfo("a\0b")).isRepo, false);
 });
+
+test("GIT_CEILING_DIRECTORIES is respected: a folder below it is not taken for the repository above it", () => {
+  const outer = repo();
+  commit(outer);
+  const sub = join(outer, "sub");
+  mkdirSync(sub);
+  const saved = process.env.GIT_CEILING_DIRECTORIES;
+  process.env.GIT_CEILING_DIRECTORIES = outer;
+  return gitInfo(sub).then((info) => {
+    assert.equal(info.isRepo, false);
+  }).finally(() => {
+    if (saved === undefined) delete process.env.GIT_CEILING_DIRECTORIES;
+    else process.env.GIT_CEILING_DIRECTORIES = saved;
+  });
+});

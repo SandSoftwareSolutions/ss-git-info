@@ -41,7 +41,7 @@ writeFileSync("dist/version.json", JSON.stringify({ version: await versionStamp(
 - Git is started without a shell and with a time limit (`timeoutMs`, default 5 seconds), prompts for passwords are switched off, and the output language is fixed.
 - Works from any subfolder of the repository.
 - `branch` is the plain branch name, also when a tag has the same name. It is returned exactly as git has it: branch names may contain `$`, quotes and backticks, so quote it when you put it in a shell command or HTML.
-- Variables such as `GIT_DIR` and `GIT_INDEX_FILE` (set inside git hooks) are removed for the git calls, so the folder you ask about is the one you get. Git is run with `--no-optional-locks`, so asking never writes to the repository.
+- Variables such as `GIT_DIR` and `GIT_INDEX_FILE` (set inside git hooks) are removed for the git calls, so the folder you ask about is the one you get (so a deliberate `GIT_DIR`/`GIT_WORK_TREE` set-up, such as a bare dotfiles repository, reads as not a repository). `GIT_CEILING_DIRECTORIES` is left alone, so it still stops git from climbing into a parent repository. Git is run with `--no-optional-locks`, so asking never writes to the repository.
 - A repository that git refuses to open ("dubious ownership", `safe.directory`) looks like not a repository: `isRepo` is `false`.
 - A huge list of changes still gives `dirty: true`. Only a timeout gives `dirty: null`.
 - `1.4.0-dirty` (a dirty checkout exactly on a tag) is, to semver, a pre-release that sorts *before* 1.4.0. If you compare versions, use the `+` part (`gitInfo().dirty`) instead of the suffix.

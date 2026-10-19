@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 
 // Variables that make git look at another repository than the folder we ask about (they are set inside git hooks, for example).
-const REDIRECTING = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_CEILING_DIRECTORIES"];
+const REDIRECTING = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE"];
 
 function environment() {
   const env = { ...process.env, GIT_TERMINAL_PROMPT: "0", LC_ALL: "C" };
