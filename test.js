@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
@@ -111,4 +111,59 @@ test("works from a subfolder", async () => {
   commit(dir);
   mkdirSync(join(dir, "sub"));
   assert.equal((await gitInfo(join(dir, "sub"))).isRepo, true);
+});
+
+test("a branch with the same name as a tag is still just the branch name", async () => {
+  const dir = repo();
+  commit(dir);
+  git(dir, "tag", "release");
+  git(dir, "checkout", "-q", "-b", "other");
+  git(dir, "branch", "-m", "release");
+  const info = await gitInfo(dir);
+  assert.equal(info.branch, "release");
+  assert.equal(info.tag, "release");
+});
+
+test("hostile branch names come back as plain text and nothing is run", { skip: process.platform === "win32" }, async () => {
+  const dir = repo();
+  commit(dir);
+  const name = "$(touch${IFS}pwned);`touch${IFS}pwned2`;x\"y'z";
+  git(dir, "checkout", "-q", "-b", name);
+  assert.equal((await gitInfo(dir)).branch, name);
+  assert.equal(existsSync(join(dir, "pwned")) || existsSync(join(dir, "pwned2")) || existsSync("pwned"), false);
+});
+
+test("a password that contains @ is hidden completely", () => {
+  assert.equal(hideCredentials("https://user:p@ss@host/x.git"), "https://host/x.git");
+  assert.equal(hideCredentials("https://user:p%40ss@host/x.git"), "https://host/x.git");
+  assert.equal(hideCredentials("https://user:secret@host?x=1@y"), "https://host?x=1@y");
+  assert.equal(hideCredentials("https://host/@scope/pkg.git"), "https://host/@scope/pkg.git");
+});
+
+test("a very long list of changes still counts as dirty", { timeout: 60000 }, async () => {
+  const dir = repo();
+  commit(dir);
+  for (let i = 0; i < 9500; i++) writeFileSync(join(dir, `${"u".repeat(120)}${i}`), "");
+  assert.equal((await gitInfo(dir)).dirty, true);
+});
+
+test("variables set inside git hooks do not point it at another repository", async () => {
+  const mine = repo();
+  commit(mine, "mine.txt");
+  const other = repo();
+  commit(other, "other.txt", "other");
+  const wanted = git(mine, "rev-parse", "HEAD").trim();
+  const saved = process.env.GIT_DIR;
+  process.env.GIT_DIR = join(other, ".git");
+  try {
+    assert.equal((await gitInfo(mine)).commit, wanted);
+  } finally {
+    if (saved === undefined) delete process.env.GIT_DIR;
+    else process.env.GIT_DIR = saved;
+  }
+});
+
+test("a cwd that is not usable gives nulls, not an exception", async () => {
+  assert.equal((await gitInfo(123)).isRepo, false);
+  assert.equal((await gitInfo("a\0b")).isRepo, false);
 });
