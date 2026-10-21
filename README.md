@@ -10,6 +10,8 @@ Ask git what it knows (commit, branch, tag, changes) for a version stamp in your
 npm install @sandsoftwaresolutions/git-info
 ```
 
+Works with `import` and `require()`, and ships TypeScript types for both.
+
 ## Usage
 
 ```js
